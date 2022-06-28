@@ -19,10 +19,10 @@ const dirNode = '../node_modules';
 module.exports = {
   entry: [path.join(dirApp, 'index.js'), path.join(dirStyles, 'index.scss')],
   output: {
+    hashFunction: 'xxhash64',
     path: path.resolve(__dirname, '../dist'),
-    filename: 'bundle.[contenthash].js',
+    filename: 'js/bundle.[contenthash].js',
     clean: true,
-    assetModuleFilename: 'assets/[path][name].[contenthash][ext][query]',
   },
   resolve: {
     modules: [dirApp, dirAssets, dirStyles, dirNode],
@@ -31,10 +31,12 @@ module.exports = {
     rules: [
       {
         test: /\.(html)$/,
+        exclude: /node_modules/,
         use: ['html-loader'],
       },
       {
         test: /\.pug$/,
+        exclude: /node_modules/,
         use: ['pug-loader'],
       },
       {
@@ -78,21 +80,33 @@ module.exports = {
       },
       {
         test: /\.(png|svg|jpg|jpeg|gif|webp)$/i,
-        type: 'asset/resource',
+        type: 'asset',
+        generator: {
+          filename: 'images/[name].[hash][ext][query]',
+        },
       },
       {
         test: /\.(woff|woff2|eot|ttf|otf)$/i,
         type: 'asset/resource',
+        generator: {
+          filename: 'fonts/[name].[hash][ext][query]',
+        },
       },
       {
         test: /\.(glsl|frag|vert)$/,
         loader: 'raw-loader',
         exclude: /node_modules/,
+        generator: {
+          filename: 'shaders/[name].[hash][ext][query]',
+        },
       },
       {
         test: /\.(glsl|frag|vert)$/,
         loader: 'glslify-loader',
         exclude: /node_modules/,
+        generator: {
+          filename: 'shaders/[name].[hash][ext][query]',
+        },
       },
     ],
   },
@@ -109,7 +123,7 @@ module.exports = {
       ],
     }),
     new MiniCssExtractPlugin({
-      filename: 'bundle.[contenthash].css',
+      filename: 'css/bundle.[contenthash].css',
       chunkFilename: '[id].css',
     }),
     new ESLintPlugin(),
@@ -124,15 +138,22 @@ module.exports = {
     minimizer: [
       new ImageMinimizerPlugin({
         minimizer: {
-          implementation: ImageMinimizerPlugin.imageminMinify,
+          implementation: ImageMinimizerPlugin.squooshMinify,
           options: {
-            // Lossless optimization with custom option
-            // Feel free to experiment with options for better result for you
-            plugins: [
-              ['gifsicle', { interlaced: true }],
-              ['jpegtran', { progressive: true }],
-              ['optipng', { optimizationLevel: 5 }],
-            ],
+            encodeOptions: {
+              mozjpeg: {
+                // That setting might be close to lossless, but it’s not guaranteed
+                // https://github.com/GoogleChromeLabs/squoosh/issues/85
+                quality: 100,
+              },
+              webp: {
+                lossless: 1,
+              },
+              avif: {
+                // https://github.com/GoogleChromeLabs/squoosh/blob/dev/codecs/avif/enc/README.md
+                cqLevel: 0,
+              },
+            },
           },
         },
       }),
