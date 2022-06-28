@@ -93,17 +93,9 @@ module.exports = {
         },
       },
       {
-        test: /\.(glsl|frag|vert)$/,
-        loader: 'raw-loader',
+        test: /\.(glsl|vs|fs|vert|frag)$/,
         exclude: /node_modules/,
-        generator: {
-          filename: 'shaders/[name].[hash][ext][query]',
-        },
-      },
-      {
-        test: /\.(glsl|frag|vert)$/,
-        loader: 'glslify-loader',
-        exclude: /node_modules/,
+        use: ['raw-loader', 'glslify-loader'],
         generator: {
           filename: 'shaders/[name].[hash][ext][query]',
         },
